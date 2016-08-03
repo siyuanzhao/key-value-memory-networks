@@ -240,7 +240,7 @@ class MemN2N_KV(object):
             # print "shape of mkeys_embedded_chars: {}".format(
             #    self.mkeys_embedded_chars.get_shape())
         # q_tmp = tf.matmul(logits, self.B, transpose_a=True)
-        y_tmp = tf.matmul(self.B, self.W_memory, transpose_b=True)
+        y_tmp = tf.matmul(self.B, 0.5*self.W_memory+0.5*self.W, transpose_b=True)
         with tf.name_scope("prediction"):
             # logits = tf.matmul(q_tmp, tf.transpose(self.W))
             logits = tf.matmul(o, y_tmp)
@@ -250,8 +250,7 @@ class MemN2N_KV(object):
             if self._is_training:
                 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
                     logits, tf.cast(self._labels, tf.float32), name='cross_entropy')
-                cross_entropy_sum = tf.reduce_sum(
-                    cross_entropy, name="cross_entropy_sum")
+                cross_entropy_sum = tf.reduce_sum(cross_entropy, name="cross_entropy_sum")
 
                 # loss op
                 loss_op = cross_entropy_sum
@@ -332,8 +331,8 @@ class MemN2N_KV(object):
 
                 print 'shape of u[-1]: {}'.format(u[-1].get_shape())
                 print 'shape of u[-1]+o_k: {}'.format((u[-1]+o_k).get_shape())
-                u_k = tf.matmul(u[-1] + o_k, R)
+                u_k = tf.matmul(R, u[-1]+o_k, transpose_b=True)
 
-                u.append(u_k)
+                u.append(tf.transpose(u_k))
 
             return u[-1]
