@@ -175,7 +175,7 @@ with tf.Session() as sess:
                     model._memory_value: s
                 }
                 val_preds = sess.run(model.predict_op, feed_dict)
-                acc = metrics.accuracy_score(np.array(val_preds), val_labels)
+                acc = metrics.accuracy_score(np.array(val_preds), val_labels[start:end])
 
                 val_accs.append(acc)
 
@@ -190,7 +190,7 @@ with tf.Session() as sess:
                     model._memory_value: s
                 }
                 val_preds = sess.run(model.predict_op, feed_dict)
-                acc = metrics.accuracy_score(np.array(val_preds), val_labels)
+                acc = metrics.accuracy_score(np.array(val_preds), test_labels[start:end])
                 test_accs.append(acc)
 
             print('-----------------------')
