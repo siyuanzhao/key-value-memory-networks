@@ -212,13 +212,14 @@ class MemN2N_KV(object):
             with tf.variable_scope('gru', reuse=True):
                 q_output, _ = tf.nn.rnn(q_rnn, q, dtype=tf.float32)
             doc_r = doc_output[-1]
+            value_r = doc_r
             q_r = q_output[-1]
 
         r_list = []
         for _ in range(self._hops):
             # define R for variables
             R = tf.get_variable(
-                'R{}'.format(_), shape=[self._embedding_size, self._embedding_size],
+                'R{}'.format(_), shape=[self._feature_size, self._feature_size],
                 initializer=tf.random_normal_initializer(stddev=0.1))
             r_list.append(R)
 
@@ -229,10 +230,11 @@ class MemN2N_KV(object):
         #    tf.transpose(doc_r, [2, 0, 1]),
         #    tf.transpose(value_r, [2, 0, 1]),
         #    tf.transpose(q_r), r_list)
+        # o.shape: [feature_size, batch_size]
         o = self._key_addressing(doc_r, value_r, q_r, r_list)
-        # o = tf.transpose(o)
+        o = tf.transpose(o)
         self.B = tf.get_variable(
-            'B', shape=[self._embedding_size, self._embedding_size],
+            'B', shape=[self._feature_size, self._embedding_size],
             initializer=tf.random_normal_initializer(stddev=0.1))
 
         if debug_mode:
@@ -240,7 +242,8 @@ class MemN2N_KV(object):
             # print "shape of mkeys_embedded_chars: {}".format(
             #    self.mkeys_embedded_chars.get_shape())
         # q_tmp = tf.matmul(logits, self.B, transpose_a=True)
-        y_tmp = tf.matmul(self.B, 0.5*self.W_memory+0.5*self.W, transpose_b=True)
+        # y_tmp.shape: [feature_size, vocab]
+        y_tmp = tf.matmul(self.A, self.W_memory, transpose_b=True)
         with tf.name_scope("prediction"):
             # logits = tf.matmul(q_tmp, tf.transpose(self.W))
             logits = tf.matmul(o, y_tmp)
@@ -293,14 +296,18 @@ class MemN2N_KV(object):
     def _key_addressing(self, mkeys, mvalues, notes, r_list):
         with tf.variable_scope(self._name):
             # [d, batch_size]
-            # u = [tf.matmul(self.A, notes)]
-            u = [notes]
+            u = tf.matmul(self.A, notes, transpose_b=True)
+            u = [u]
             for _ in range(self._hops):
                 R = r_list[_]
                 u_temp = u[-1]
-                # [d, batch_size]
+                # [embedding_size, batch_size x memory_size]
+                k_temp = tf.reshape(tf.transpose(mkeys, [2, 0, 1]), [self._embedding_size, -1])
+                
+                a_k_temp = tf.matmul(self.A, k_temp)
+                a_k = tf.reshape(tf.transpose(a_k_temp), [-1, self._memory_key_size, self._feature_size])
                 # k_temp = tf.matmul(self.A, tf.reshape(mkeys, [self._embedding_size, -1]))
-                u_expanded = tf.expand_dims(u_temp, [1])
+                u_expanded = tf.expand_dims(tf.transpose(u_temp), [1])
                 # reshape k_temp to [batch_size, memory_size, feature_size]
                 # k_temp = tf.reshape(k_temp, [-1, self._memory_key_size, self._feature_size])
                 # reshape u_temp to [batch_size, 1, feature_size] to do dot product
@@ -309,7 +316,7 @@ class MemN2N_KV(object):
                 # dotted = tf.matmul(u_temp, k_temp, transpose_a=True)
                 # do dot product
                 # dotted = tf.reduce_sum(k_temp * u_temp_reshaped, 2)
-                dotted = tf.reduce_sum(mkeys * u_expanded, 2)
+                dotted = tf.reduce_sum(a_k*u_expanded, 2)
 
                 # print 'shape of k_temp: {}'.format(k_temp.get_shape())
                 print 'shape of dotted: {}'.format(dotted.get_shape())
@@ -318,21 +325,24 @@ class MemN2N_KV(object):
                 probs = tf.nn.softmax(dotted)
                 print 'shape of probs: {}'.format(probs.get_shape())
                 probs_expand = tf.expand_dims(probs, -1)
-                # v_temp = tf.matmul(self.A_mvalue, tf.reshape(mvalues, [self._embedding_size, -1]))
+                v_temp = tf.reshape(tf.transpose(mvalues, [2, 0, 1]), [self._embedding_size, -1])
+                a_v_temp = tf.matmul(self.A_mvalue, v_temp)
+                a_v = tf.reshape(tf.transpose(a_v_temp), [-1, self._memory_key_size, self._feature_size])
                 # reshape v_temp to [batch_size, sentence_size, feature_size]
                 # v_temp_reshaped = tf.reshape(tf.transpose(v_temp), [-1, self._memory_value_size, self._feature_size])
                 # v_temp_expand = tf.expand_dims(v_temp, 0)
                 # print 'shape of probs*v_temp: {}'.format(
                 #    (probs_expand*v_temp_reshaped).get_shape())
                 # o_k = tf.reduce_sum(probs_expand*v_temp_reshaped, 1)
-                o_k = tf.reduce_sum(probs_expand*mvalues, 1)
-                # o_k = tf.transpose(o_k)
+                # [batch_size, feature_size]
+                o_k = tf.reduce_sum(probs_expand*a_v, 1)
+                o_k = tf.transpose(o_k)
                 print 'shape of o_k: {}'.format(o_k.get_shape())
 
                 print 'shape of u[-1]: {}'.format(u[-1].get_shape())
                 print 'shape of u[-1]+o_k: {}'.format((u[-1]+o_k).get_shape())
-                u_k = tf.matmul(R, u[-1]+o_k, transpose_b=True)
+                u_k = tf.matmul(R, u[-1]+o_k)
 
-                u.append(tf.transpose(u_k))
+                u.append(u_k)
 
             return u[-1]
