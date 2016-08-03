@@ -1,6 +1,5 @@
-# deep-networks
-The implementation of different kinds of deep networks in Tensorflow
+# Key Value Memory Networks
 
-<i>attention reader</i> contains the implementation of Gated-Attention Reader from https://arxiv.org/abs/1606.01549
+This repo contains the implementation of [Key Value Memory Networks for Directly Reading Documents](https://arxiv.org/abs/1606.03126) in Tensorflow. The model is tested on [bAbI](http://arxiv.org/abs/1502.05698).
 
-<i>key value memory</i> contains the implementation of Key-Value Memory Networks from https://arxiv.org/abs/1606.03126
+[key_value_mem.png]
