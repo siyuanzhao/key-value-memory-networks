@@ -125,6 +125,11 @@ class MemN2N_KV(object):
                 'A_mvalue', shape=[d, self._embedding_size],
                 initializer=tf.contrib.layers.xavier_initializer())
 
+        self.TK = tf.get_variable('TK', shape=[self._memory_value_size, self._embedding_size],
+                                  initializer=tf.random_normal_initializer(stddev=0.1))
+        self.TV = tf.get_variable('TV', shape=[self._memory_value_size, self._embedding_size],
+                                  initializer=tf.random_normal_initializer(stddev=0.1))
+
         # use attention reader to embed notes and wiki pages
         # self.ar = Attention_Reader(
         #    self._batch_size, self._vocab_size, self._embedding_size,
@@ -140,6 +145,7 @@ class MemN2N_KV(object):
                 0, [nil_word_slot, tf.get_variable(
                     'W_memory', shape=[vocab_size-1, embedding_size],
                     initializer=tf.random_normal_initializer(stddev=0.1))])
+
             # self.W_memory = self.W
             self._nil_vars = set([self.W.name, self.W_memory.name])
             self.embedded_chars = tf.nn.embedding_lookup(self.W, self._query)
@@ -256,8 +262,7 @@ class MemN2N_KV(object):
                 cross_entropy_sum = tf.reduce_sum(cross_entropy, name="cross_entropy_sum")
 
                 # loss op
-                loss_op = cross_entropy_sum
-                # loss_op = cross_entropy_sum
+                loss_op = cross_entropy_sum + tf.nn.l2_loss(logits)
                 # predict ops
                 predict_op = tf.argmax(probs, 1, name="predict_op")
 
@@ -302,7 +307,8 @@ class MemN2N_KV(object):
                 R = r_list[_]
                 u_temp = u[-1]
                 # [embedding_size, batch_size x memory_size]
-                k_temp = tf.reshape(tf.transpose(mkeys, [2, 0, 1]), [self._embedding_size, -1])
+                mk_temp = mkeys + self.TK
+                k_temp = tf.reshape(tf.transpose(mk_temp, [2, 0, 1]), [self._embedding_size, -1])
                 
                 a_k_temp = tf.matmul(self.A, k_temp)
                 a_k = tf.reshape(tf.transpose(a_k_temp), [-1, self._memory_key_size, self._feature_size])
@@ -325,7 +331,8 @@ class MemN2N_KV(object):
                 probs = tf.nn.softmax(dotted)
                 print 'shape of probs: {}'.format(probs.get_shape())
                 probs_expand = tf.expand_dims(probs, -1)
-                v_temp = tf.reshape(tf.transpose(mvalues, [2, 0, 1]), [self._embedding_size, -1])
+                mv_temp = mvalues + self.TV
+                v_temp = tf.reshape(tf.transpose(mv_temp, [2, 0, 1]), [self._embedding_size, -1])
                 a_v_temp = tf.matmul(self.A_mvalue, v_temp)
                 a_v = tf.reshape(tf.transpose(a_v_temp), [-1, self._memory_key_size, self._feature_size])
                 # reshape v_temp to [batch_size, sentence_size, feature_size]
