@@ -15,12 +15,12 @@ import numpy as np
 import pandas as pd
 
 tf.flags.DEFINE_float("learning_rate", 0.01, "Learning rate for Adam Optimizer.")
-tf.flags.DEFINE_float("epsilon", 1e-8, "Epsilon value for Adam Optimizer.")
+tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
 tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 10, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")
 tf.flags.DEFINE_integer("hops", 3, "Number of hops in the Memory Network.")
-tf.flags.DEFINE_integer("epochs", 100, "Number of epochs to train for.")
+tf.flags.DEFINE_integer("epochs", 300, "Number of epochs to train for.")
 tf.flags.DEFINE_integer("embedding_size", 40, "Embedding size for embedding matrices.")
 tf.flags.DEFINE_integer("memory_size", 50, "Maximum size of memory.")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
@@ -99,7 +99,6 @@ val_labels = np.argmax(valA, axis=1)
 
 tf.set_random_seed(FLAGS.random_state)
 batch_size = FLAGS.batch_size
-optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate, epsilon=FLAGS.epsilon)
 
 # This avoids feeding 1 task after another, instead each batch has a random sampling of tasks
 batches = zip(range(0, n_train-batch_size, batch_size), range(batch_size, n_train, batch_size))
@@ -108,7 +107,7 @@ batches = [(start, end) for start, end in batches]
 with tf.Session() as sess:
     global_step = tf.Variable(0, name="global_step", trainable=False)
     # decay learning rate
-    starter_learning_rate = 0.01
+    starter_learning_rate = FLAGS.learning_rate
     learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step, 2000, 0.96, staircase=True)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, epsilon=FLAGS.epsilon)
