@@ -26,6 +26,7 @@ tf.flags.DEFINE_integer("memory_size", 30, "Maximum size of memory.")
 tf.flags.DEFINE_integer("task_id", 1, "bAbI task id, 1 <= id <= 20")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
 tf.flags.DEFINE_string("data_dir", "data/tasks_1-20_v1-2/en/", "Directory containing bAbI tasks")
+tf.flags.DEFINE_string("reader", "bow", "Reader for the model")
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
@@ -92,12 +93,13 @@ with tf.Graph().as_default():
         
         model = MemN2N_KV(batch_size=batch_size, vocab_size=vocab_size,
                           note_size=sentence_size, doc_size=sentence_size, memory_key_size=memory_size,
-                          feature_size=FLAGS.feature_size, memory_value_size=memory_size, embedding_size=FLAGS.embedding_size, hops=FLAGS.hops)
+                          feature_size=FLAGS.feature_size, memory_value_size=memory_size,
+                          embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader)
         grads_and_vars = optimizer.compute_gradients(model.loss_op)
 
         grads_and_vars = [(tf.clip_by_norm(g, FLAGS.max_grad_norm), v)
                           for g, v in grads_and_vars if g is not None]
-        grads_and_vars = [(add_gradient_noise(g), v) for g, v in grads_and_vars]
+        # grads_and_vars = [(add_gradient_noise(g), v) for g, v in grads_and_vars]
         nil_grads_and_vars = []
         for g, v in grads_and_vars:
             if v.name in model._nil_vars:
@@ -131,7 +133,7 @@ with tf.Graph().as_default():
             train_acc = metrics.accuracy_score(np.array(train_preds), train_labels)
             print('-----------------------')
             print('Epoch', t)
-            print('Training Accuracy:', train_acc)
+            print('Training Accuracy: {0:.2f}'.format(train_acc))
             print('-----------------------')
                 
             if t % FLAGS.evaluation_interval == 0:
@@ -155,4 +157,4 @@ with tf.Graph().as_default():
         test_preds = sess.run(model.predict_op, feed_dict)
         # test_preds = model.predict(testS, testQ)
         test_acc = metrics.accuracy_score(test_preds, test_labels)
-        print("Testing Accuracy:", test_acc)
+        print("Testing Accuracy: {0:.2f}".format(test_acc))

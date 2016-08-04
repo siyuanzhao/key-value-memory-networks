@@ -27,6 +27,7 @@ tf.flags.DEFINE_integer("random_state", None, "Random state.")
 tf.flags.DEFINE_string("data_dir", "data/tasks_1-20_v1-2/en/", "Directory containing bAbI tasks")
 tf.flags.DEFINE_string("output_file", "scores.csv", "Name of output file for final bAbI accuracy scores.")
 tf.flags.DEFINE_integer("feature_size", 40, "Feature size")
+tf.flags.DEFINE_string("reader", "bow", "Reader for the model")
 FLAGS = tf.flags.FLAGS
 
 print("Started Joint Model")
@@ -114,7 +115,7 @@ with tf.Session() as sess:
 
     model = MemN2N_KV(batch_size=batch_size, vocab_size=vocab_size,
                       note_size=sentence_size, doc_size=sentence_size, memory_key_size=memory_size,
-                      feature_size=FLAGS.feature_size, memory_value_size=memory_size, embedding_size=FLAGS.embedding_size, hops=FLAGS.hops)
+                      feature_size=FLAGS.feature_size, memory_value_size=memory_size, embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader)
     grads_and_vars = optimizer.compute_gradients(model.loss_op)
 
     grads_and_vars = [(tf.clip_by_norm(g, FLAGS.max_grad_norm), v)
@@ -161,7 +162,7 @@ with tf.Session() as sess:
                 predict_op = sess.run(model.predict_op, feed_dict)
 
                 acc = metrics.accuracy_score(predict_op, train_labels[start:end])
-                train_accs.append(acc)
+                train_accs.append('{0:.2f}'.format(acc))
 
             val_accs = []
             for start in range(0, n_val, n_val/20):
@@ -176,7 +177,7 @@ with tf.Session() as sess:
                 val_preds = sess.run(model.predict_op, feed_dict)
                 acc = metrics.accuracy_score(np.array(val_preds), val_labels[start:end])
 
-                val_accs.append(acc)
+                val_accs.append('{0:.2f}'.format(acc))
 
             test_accs = []
             for start in range(0, n_test, n_test/20):
@@ -190,7 +191,7 @@ with tf.Session() as sess:
                 }
                 val_preds = sess.run(model.predict_op, feed_dict)
                 acc = metrics.accuracy_score(np.array(val_preds), test_labels[start:end])
-                test_accs.append(acc)
+                test_accs.append('{0:.2f}'.format(acc))
 
             print('-----------------------')
             print('Epoch', i)
