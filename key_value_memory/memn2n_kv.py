@@ -98,6 +98,7 @@ class MemN2N_KV(object):
         self._memory_value_size = memory_value_size
         self._n_hidden = 10
         self._encoding = tf.constant(position_encoding(self._doc_size, self._embedding_size), name="encoding")
+        self._reader = reader
         self._build_inputs()
 
         d = feature_size
@@ -117,18 +118,23 @@ class MemN2N_KV(object):
                 'A', shape=[d, self._embedding_size],
                 initializer=tf.random_normal_initializer(stddev=0.1))
             self.A_mvalue = self.A
+            self.TK = tf.get_variable('TK', shape=[self._memory_value_size, self._embedding_size],
+                                      initializer=tf.random_normal_initializer(stddev=0.1))
+            self.TV = tf.get_variable('TV', shape=[self._memory_value_size, self._embedding_size],
+                                      initializer=tf.random_normal_initializer(stddev=0.1))
+
         elif reader == 'simple_gru':
             self.A = tf.get_variable(
                 'A', shape=[d, self._n_hidden],
                 initializer=tf.contrib.layers.xavier_initializer())
-            self.A_mvalue = tf.get_variable(
-                'A_mvalue', shape=[d, self._embedding_size],
-                initializer=tf.contrib.layers.xavier_initializer())
-
-        self.TK = tf.get_variable('TK', shape=[self._memory_value_size, self._embedding_size],
-                                  initializer=tf.random_normal_initializer(stddev=0.1))
-        self.TV = tf.get_variable('TV', shape=[self._memory_value_size, self._embedding_size],
-                                  initializer=tf.random_normal_initializer(stddev=0.1))
+            self.A_mvalue = self.A
+            # self.A_mvalue = tf.get_variable(
+            #    'A_mvalue', shape=[d, self._embedding_size],
+            #    initializer=tf.contrib.layers.xavier_initializer())
+            self.TK = tf.get_variable('TK', shape=[self._memory_value_size, self._n_hidden],
+                                      initializer=tf.random_normal_initializer(stddev=0.1))
+            self.TV = tf.get_variable('TV', shape=[self._memory_value_size, self._n_hidden],
+                                      initializer=tf.random_normal_initializer(stddev=0.1))
 
         # use attention reader to embed notes and wiki pages
         # self.ar = Attention_Reader(
@@ -198,7 +204,8 @@ class MemN2N_KV(object):
             # Permuting batch_size and n_steps
             # for d in ['/gpu:0', '/gpu:1']:
             # with tf.device(d):
-            x = tf.transpose(self.mkeys_embedded_chars, [1, 0, 2])
+            x_tmp = tf.reshape(self.mkeys_embedded_chars, [-1, self._doc_size, self._embedding_size])
+            x = tf.transpose(x_tmp, [1, 0, 2])
             # Reshape to (n_steps*batch_size, n_input)
             x = tf.reshape(x, [-1, self._embedding_size])
             # Split to get a list of 'n_steps'
@@ -210,14 +217,14 @@ class MemN2N_KV(object):
             q = tf.reshape(q, [-1, self._embedding_size])
             q = tf.split(0, self._note_size, q)
 
-            rnn = tf.nn.rnn_cell.GRUCell(self._n_hidden)
+            k_rnn = tf.nn.rnn_cell.GRUCell(self._n_hidden)
             q_rnn = tf.nn.rnn_cell.GRUCell(self._n_hidden)
 
             with tf.variable_scope('gru'):
-                doc_output, _ = tf.nn.rnn(rnn, x, dtype=tf.float32)
+                doc_output, _ = tf.nn.rnn(k_rnn, x, dtype=tf.float32)
             with tf.variable_scope('gru', reuse=True):
                 q_output, _ = tf.nn.rnn(q_rnn, q, dtype=tf.float32)
-            doc_r = doc_output[-1]
+            doc_r = tf.reshape(doc_output[-1], [-1, self._memory_key_size, self._n_hidden])
             value_r = doc_r
             q_r = q_output[-1]
 
@@ -239,9 +246,12 @@ class MemN2N_KV(object):
         # o.shape: [feature_size, batch_size]
         o = self._key_addressing(doc_r, value_r, q_r, r_list)
         o = tf.transpose(o)
-        self.B = tf.get_variable(
-            'B', shape=[self._feature_size, self._embedding_size],
-            initializer=tf.random_normal_initializer(stddev=0.1))
+        if reader == 'bow':
+            self.B = self.A
+        elif reader == 'simple_gru':
+            self.B = tf.get_variable(
+                'B', shape=[self._feature_size, self._embedding_size],
+                initializer=tf.random_normal_initializer(stddev=0.1))
 
         if debug_mode:
             print "shape of output is ", o.get_shape()
@@ -249,7 +259,7 @@ class MemN2N_KV(object):
             #    self.mkeys_embedded_chars.get_shape())
         # q_tmp = tf.matmul(logits, self.B, transpose_a=True)
         # y_tmp.shape: [feature_size, vocab]
-        y_tmp = tf.matmul(self.A, self.W_memory, transpose_b=True)
+        y_tmp = tf.matmul(self.B, self.W_memory, transpose_b=True)
         with tf.name_scope("prediction"):
             # logits = tf.matmul(q_tmp, tf.transpose(self.W))
             logits = tf.matmul(o, y_tmp)
@@ -299,6 +309,12 @@ class MemN2N_KV(object):
     self.A, self.B and R are the parameters to learn
     '''
     def _key_addressing(self, mkeys, mvalues, notes, r_list):
+        # the size of feature from reader
+        if self._reader == 'bow':
+            reader_feature_size = self._embedding_size
+        elif self._reader == 'simple_gru':
+            reader_feature_size = self._n_hidden
+            
         with tf.variable_scope(self._name):
             # [d, batch_size]
             u = tf.matmul(self.A, notes, transpose_b=True)
@@ -308,7 +324,7 @@ class MemN2N_KV(object):
                 u_temp = u[-1]
                 # [embedding_size, batch_size x memory_size]
                 mk_temp = mkeys + self.TK
-                k_temp = tf.reshape(tf.transpose(mk_temp, [2, 0, 1]), [self._embedding_size, -1])
+                k_temp = tf.reshape(tf.transpose(mk_temp, [2, 0, 1]), [reader_feature_size, -1])
                 
                 a_k_temp = tf.matmul(self.A, k_temp)
                 a_k = tf.reshape(tf.transpose(a_k_temp), [-1, self._memory_key_size, self._feature_size])
@@ -332,7 +348,7 @@ class MemN2N_KV(object):
                 print 'shape of probs: {}'.format(probs.get_shape())
                 probs_expand = tf.expand_dims(probs, -1)
                 mv_temp = mvalues + self.TV
-                v_temp = tf.reshape(tf.transpose(mv_temp, [2, 0, 1]), [self._embedding_size, -1])
+                v_temp = tf.reshape(tf.transpose(mv_temp, [2, 0, 1]), [reader_feature_size, -1])
                 a_v_temp = tf.matmul(self.A_mvalue, v_temp)
                 a_v = tf.reshape(tf.transpose(a_v_temp), [-1, self._memory_key_size, self._feature_size])
                 # reshape v_temp to [batch_size, sentence_size, feature_size]
