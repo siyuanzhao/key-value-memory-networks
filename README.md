@@ -27,14 +27,16 @@ Running a [single bAbI task](./key_value_memory/single.py)
 Running a [joint model on all bAbI tasks](./key_value_memory/joint.py)
 
 ### Results
-
-The model is jointly trained on 20 tasks with following hyperparameters.
+#### Bag of Words
+The model is jointly trained on 20 tasks using bag of words to read texts with following hyperparameters.
 - epochs: 200
 - feature_size: 50
 - embedding_size: 40
 - hops: 3
 - learning_rate (with decay): 0.005
-
+```
+python joint.py --epochs 200 --feature_size 50 --learning_rate 0.005
+```
 
 | Task | Testing Accuracy | Training Accuracy | Validation Accuracy |
 |------|------------------|-------------------|---------------------|
@@ -58,6 +60,39 @@ The model is jointly trained on 20 tasks with following hyperparameters.
 | 18   | 0.91             | 0.96              | 0.96                |
 | 19   | 0.08             | 0.09              | 0.09                |
 | 20   | 0.84             | 0.85              | 0.84                |
+
+#### RNN(GRU)
+The model is jointly trained on 20 tasks using GRU to read texts with following hyperparameters.
+- epochs: 200
+- feature_size: 50
+- embedding_size: 40
+- hops: 3
+- learning_rate (with decay): 0.005
+```
+python joint.py --epochs 200 --feature_size 50 --learning_rate 0.005 --reader simple_gru
+```
+| Task | Testing Accuracy | Training Accuracy | Validation Accuracy |
+|------|------------------|-------------------|---------------------|
+| 1    | 1.00             | 1.00              | 1.00                |
+| 2    | 0.66             | 0.99              | 0.82                |
+| 3    | 0.42             | 0.97              | 0.60                |
+| 4    | 0.99             | 1.00              | 0.99                |
+| 5    | 0.49             | 0.53              | 0.57                |
+| 6    | 0.93             | 0.99              | 0.96                |
+| 7    | 0.49             | 0.49              | 0.46                |
+| 8    | 0.88             | 0.92              | 0.91                |
+| 9    | 0.95             | 0.99              | 0.98                |
+| 10   | 0.89             | 0.98              | 0.87                |
+| 11   | 1.00             | 1.00              | 1.00                |
+| 12   | 1.00             | 1.00              | 1.00                |
+| 13   | 1.00             | 1.00              | 1.00                |
+| 14   | 0.95             | 1.00              | 0.98                |
+| 15   | 0.21             | 0.28              | 0.36                |
+| 16   | 0.24             | 0.28              | 0.31                |
+| 17   | 0.53             | 0.94              | 0.78                |
+| 18   | 0.91             | 0.99              | 0.94                |
+| 19   | 0.08             | 0.10              | 0.06                |
+| 20   | 0.84             | 0.85              | 0.82                |
 
 I'm still trying to tune hyperparameters or model to improve results.
 
