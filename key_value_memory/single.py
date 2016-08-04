@@ -14,6 +14,7 @@ import numpy as np
 from memn2n_kv import zero_nil_slot, add_gradient_noise
 
 tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
+tf.flags.DEFINE_float("learning_rate", 0.005, "Epsilon value for Adam Optimizer.")
 tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 50, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")
@@ -82,7 +83,7 @@ with tf.Graph().as_default():
 
     global_step = tf.Variable(0, name="global_step", trainable=False)
     # decay learning rate
-    starter_learning_rate = 0.005
+    starter_learning_rate = FLAGS.learning_rate
     learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step, 2000, 0.96, staircase=True)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, epsilon=FLAGS.epsilon)
