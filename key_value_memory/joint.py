@@ -16,6 +16,7 @@ import pandas as pd
 
 tf.flags.DEFINE_float("learning_rate", 0.01, "Learning rate for Adam Optimizer.")
 tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
+tf.flags.DEFINE_float("l2_lambda", 0.2, "Lambda for l2 loss.")
 tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 10, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")
@@ -115,7 +116,7 @@ with tf.Session() as sess:
 
     model = MemN2N_KV(batch_size=batch_size, vocab_size=vocab_size,
                       note_size=sentence_size, doc_size=sentence_size, memory_key_size=memory_size,
-                      feature_size=FLAGS.feature_size, memory_value_size=memory_size, embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader)
+                      feature_size=FLAGS.feature_size, memory_value_size=memory_size, embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader, l2_lambda=FLAGS.l2_lambda)
     grads_and_vars = optimizer.compute_gradients(model.loss_op)
 
     grads_and_vars = [(tf.clip_by_norm(g, FLAGS.max_grad_norm), v)

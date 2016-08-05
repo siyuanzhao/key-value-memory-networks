@@ -14,6 +14,7 @@ import numpy as np
 from memn2n_kv import zero_nil_slot, add_gradient_noise
 
 tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
+tf.flags.DEFINE_float("l2_lambda", 0.2, "Lambda for l2 loss.")
 tf.flags.DEFINE_float("learning_rate", 0.005, "Epsilon value for Adam Optimizer.")
 tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 50, "Evaluate and print results every x epochs")
@@ -29,6 +30,7 @@ tf.flags.DEFINE_string("data_dir", "data/tasks_1-20_v1-2/en/", "Directory contai
 tf.flags.DEFINE_string("reader", "bow", "Reader for the model")
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
+tf.flags.DEFINE_string("output_file", "single_scores.csv", "Name of output file for final bAbI accuracy scores.")
 
 FLAGS = tf.flags.FLAGS
 
@@ -94,7 +96,8 @@ with tf.Graph().as_default():
         model = MemN2N_KV(batch_size=batch_size, vocab_size=vocab_size,
                           note_size=sentence_size, doc_size=sentence_size, memory_key_size=memory_size,
                           feature_size=FLAGS.feature_size, memory_value_size=memory_size,
-                          embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader)
+                          embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader,
+                          l2_lambda=FLAGS.l2_lambda)
         grads_and_vars = optimizer.compute_gradients(model.loss_op)
 
         grads_and_vars = [(tf.clip_by_norm(g, FLAGS.max_grad_norm), v)
@@ -149,6 +152,27 @@ with tf.Graph().as_default():
                 print('Epoch', t)
                 print('Validation Accuracy:', val_acc)
                 print('-----------------------')
+        # train dataset
+        feed_dict = {
+            model._query: trainQ,
+            model._doc: trainS,
+            model._memory_value: trainS
+        }
+        train_preds = sess.run(model.predict_op, feed_dict)
+        # test_preds = model.predict(testS, testQ)
+        train_acc = metrics.accuracy_score(train_preds, train_labels)
+        train_acc = '{0:.2f}'.format(train_acc)
+        # eval dataset
+        feed_dict = {
+            model._query: valQ,
+            model._doc: valS,
+            model._memory_value: valS
+        }
+        val_preds = sess.run(model.predict_op, feed_dict)
+        # test_preds = model.predict(testS, testQ)
+        val_acc = metrics.accuracy_score(val_preds, val_labels)
+        val_acc = '{0:.2f}'.format(val_acc)
+        # testing dataset
         feed_dict = {
             model._query: testQ,
             model._doc: testS,
@@ -157,4 +181,8 @@ with tf.Graph().as_default():
         test_preds = sess.run(model.predict_op, feed_dict)
         # test_preds = model.predict(testS, testQ)
         test_acc = metrics.accuracy_score(test_preds, test_labels)
-        print("Testing Accuracy: {0:.2f}".format(test_acc))
+        test_acc = '{0:.2f}'.format(test_acc)
+        print("Testing Accuracy: {}".format(test_acc))
+        print('Writing final results to {}'.format(FLAGS.output_file))
+        with open(FLAGS.output_file, 'a') as f:
+            f.write('{}, {}, {}, {}\n'.format(FLAGS.task_id, test_acc, train_acc, val_acc))

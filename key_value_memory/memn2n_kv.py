@@ -60,6 +60,7 @@ class MemN2N_KV(object):
                  reader='bow',
                  debug_mode=True,
                  is_training=True,
+                 l2_lambda=0.2,
                  name='KeyValueMemN2N'):
         """Creates an Key Value Memory Network
 
@@ -132,9 +133,9 @@ class MemN2N_KV(object):
             #    'A_mvalue', shape=[d, self._embedding_size],
             #    initializer=tf.contrib.layers.xavier_initializer())
             self.TK = tf.get_variable('TK', shape=[self._memory_value_size, self._n_hidden],
-                                      initializer=tf.random_normal_initializer(stddev=0.1))
+                                      initializer=tf.contrib.layers.xavier_initializer())
             self.TV = tf.get_variable('TV', shape=[self._memory_value_size, self._n_hidden],
-                                      initializer=tf.random_normal_initializer(stddev=0.1))
+                                      initializer=tf.contrib.layers.xavier_initializer())
 
         # use attention reader to embed notes and wiki pages
         # self.ar = Attention_Reader(
@@ -146,11 +147,11 @@ class MemN2N_KV(object):
             self.W = tf.concat(
                 0, [nil_word_slot, tf.get_variable(
                     'W', shape=[vocab_size-1, embedding_size],
-                    initializer=tf.random_normal_initializer(stddev=0.1))])
+                    initializer=tf.contrib.layers.xavier_initializer())])
             self.W_memory = tf.concat(
                 0, [nil_word_slot, tf.get_variable(
                     'W_memory', shape=[vocab_size-1, embedding_size],
-                    initializer=tf.random_normal_initializer(stddev=0.1))])
+                    initializer=tf.contrib.layers.xavier_initializer())])
 
             # self.W_memory = self.W
             self._nil_vars = set([self.W.name, self.W_memory.name])
@@ -233,7 +234,7 @@ class MemN2N_KV(object):
             # define R for variables
             R = tf.get_variable(
                 'R{}'.format(_), shape=[self._feature_size, self._feature_size],
-                initializer=tf.random_normal_initializer(stddev=0.1))
+                initializer=tf.contrib.layers.xavier_initializer())
             r_list.append(R)
 
         # mkeys is vector representation for wiki titles
@@ -251,7 +252,7 @@ class MemN2N_KV(object):
         elif reader == 'simple_gru':
             self.B = tf.get_variable(
                 'B', shape=[self._feature_size, self._embedding_size],
-                initializer=tf.random_normal_initializer(stddev=0.1))
+                initializer=tf.contrib.layers.xavier_initializer())
 
         if debug_mode:
             print "shape of output is ", o.get_shape()
@@ -272,7 +273,7 @@ class MemN2N_KV(object):
                 cross_entropy_sum = tf.reduce_sum(cross_entropy, name="cross_entropy_sum")
 
                 # loss op
-                loss_op = cross_entropy_sum + tf.nn.l2_loss(logits)
+                loss_op = cross_entropy_sum + l2_lambda*tf.nn.l2_loss(logits)
                 # predict ops
                 predict_op = tf.argmax(probs, 1, name="predict_op")
 
