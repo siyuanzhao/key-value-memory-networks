@@ -9,10 +9,10 @@ There is a [must-read tutorial](http://www.thespermwhale.com/jaseweston/icml2016
 ### Get Started
 
 ```
-git clone https://github.com/siyuanzhao/deep-networks.git
+git clone https://github.com/siyuanzhao/key-value-memory-networks.git
 
-mkdir ./deep-networks/key_value_memory/data/
-cd ./key_value_memory/data/
+mkdir ./key-value-memory-networks/key_value_memory/data/
+cd ./key-value-memory-networks/key_value_memory/data
 wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz
 tar xzvf ./tasks_1-20_v1-2.tar.gz
 
