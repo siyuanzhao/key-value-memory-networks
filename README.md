@@ -51,7 +51,7 @@ python joint.py -h
 ### Results
 #### Bag of Words
 ##### Joint Model
-The model is jointly trained on 20 tasks (1k training examples) with following hyperparameters.
+The model is jointly trained on 20 tasks (1k training examples / weakly supervised) with following hyperparameters.
 - epochs: 200
 - feature_size: 50
 - embedding_size: 40
@@ -84,7 +84,7 @@ python joint.py --epochs 200 --feature_size 50 --learning_rate 0.005
 | 19   | 0.08             | 0.09              | 0.07                |
 | 20   | 1.00             | 1.00              | 1.00                |
 ##### Single Model
-The model is trained on a single task (1k training examples) at a time with following hyperparameters.
+The model is trained on a single task (1k training examples / weakly supervised) at a time with following hyperparameters.
 - epochs: 200
 - feature_size: 40
 - embedding_size: 30
