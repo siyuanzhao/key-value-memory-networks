@@ -87,6 +87,9 @@ python joint.py --epochs 200 --feature_size 50 --learning_rate 0.005
 | 18   | 0.92             | 0.98              | 0.95                |
 | 19   | 0.08             | 0.09              | 0.07                |
 | 20   | 1.00             | 1.00              | 1.00                |
+
+- results on 10k training examples are [here](kv_joint_10k_results.csv)
+
 ##### Single Model
 The model is trained on a single task (1k training examples / weakly supervised) at a time with following hyperparameters.
 - epochs: 200
