@@ -4,7 +4,11 @@ This repo contains the implementation of [Key Value Memory Networks for Directly
 
 ![Structure of Key Value Memory Networks](key_value_mem.png)
 
-There is a [must-read tutorial](http://www.thespermwhale.com/jaseweston/icml2016/) on Memory Networks for NLP from Jason Weston @ ICML 2016.
+### Tutorial
+- There is a [must-read tutorial](http://www.thespermwhale.com/jaseweston/icml2016/) on Memory Networks for NLP from Jason Weston @ ICML 2016.
+
+- [[Video](http://videolectures.net/deeplearning2016_chopra_attention_memory/)] [[Slides](https://drive.google.com/file/d/0B_hO8cnpcIMgYnlsMFlGSkxRLUk/view?usp=sharing)]
+Sumit Chopra, from Facebook AI, gave a lecture about Reasoning, Attention and Memory at Deep Learning Summer School 2016.
 
 ### Get Started
 
