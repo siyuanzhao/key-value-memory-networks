@@ -99,7 +99,7 @@ def vectorize_data(data, word_idx, sentence_size, memory_size):
             ss.append([word_idx[w] for w in sentence] + [0] * ls)
 
         # take only the most recent sentences that fit in memory
-        ss = ss[::-1][:memory_size][::-1]
+        ss = ss[::-1][:memory_size]
 
         # pad to memory_size
         lm = max(0, memory_size - len(ss))

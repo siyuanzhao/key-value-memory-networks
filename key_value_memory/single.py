@@ -14,9 +14,9 @@ import numpy as np
 from memn2n_gkv import zero_nil_slot, add_gradient_noise
 
 tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
-tf.flags.DEFINE_float("l2_lambda", 0.0, "Lambda for l2 loss.")
+tf.flags.DEFINE_float("l2_lambda", 0.1, "Lambda for l2 loss.")
 tf.flags.DEFINE_float("learning_rate", 0.001, "Learning rate")
-tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
+tf.flags.DEFINE_float("max_grad_norm", 20.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_float("keep_prob", 1.0, "Keep probability for dropout")
 tf.flags.DEFINE_integer("evaluation_interval", 50, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 32, "Batch size for training.")

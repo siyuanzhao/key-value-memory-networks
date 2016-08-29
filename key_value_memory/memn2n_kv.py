@@ -114,8 +114,8 @@ class MemN2N_KV(object):
         #                                initializer=tf.contrib.layers.xavier_initializer())
         self.TK = tf.get_variable('TK', shape=[self._memory_value_size, self.reader_feature_size],
                                   initializer=tf.contrib.layers.xavier_initializer())
-        #self.TV = tf.get_variable('TV', shape=[self._memory_value_size, self.reader_feature_size],
-        #                          initializer=tf.contrib.layers.xavier_initializer())
+        self.TV = tf.get_variable('TV', shape=[self._memory_value_size, self.reader_feature_size],
+                                  initializer=tf.contrib.layers.xavier_initializer())
 
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
@@ -173,16 +173,16 @@ class MemN2N_KV(object):
         o = tf.transpose(o)
         if reader == 'bow':
             self.B = self.A
-            #self.B = tf.get_variable('B', shape=[self._feature_size, self._vocab_size],
+            #self.B = tf.get_variable('B', shape=[self._feature_size, self.reader_feature_size],
             #                         initializer=tf.contrib.layers.xavier_initializer())
         elif reader == 'simple_gru':
             #self.B = tf.get_variable('B', shape=[self._feature_size, self._embedding_size],
             self.B = tf.get_variable('B', shape=[self._feature_size, self._vocab_size],
                                      initializer=tf.contrib.layers.xavier_initializer())
-        logits_bias = tf.get_variable('logits_bias', [self._vocab_size])
+        #logits_bias = tf.get_variable('logits_bias', [self._vocab_size])
         y_tmp = tf.matmul(self.B, self.W_memory, transpose_b=True)
         with tf.name_scope("prediction"):
-            logits = tf.matmul(o, y_tmp) + logits_bias
+            logits = tf.matmul(o, y_tmp)# + logits_bias
             #logits = tf.nn.dropout(tf.matmul(o, self.B) + logits_bias, self.keep_prob)
             probs = tf.nn.softmax(tf.cast(logits, tf.float32))
             
@@ -250,7 +250,7 @@ class MemN2N_KV(object):
                 probs = tf.nn.softmax(dotted)
                 # [batch_size, memory_size, 1]
                 probs_expand = tf.expand_dims(probs, -1)
-                mv_temp = mvalues + self.TK
+                mv_temp = mvalues + self.TV
                 # [reader_size, batch_size x memory_size]
                 v_temp = tf.reshape(tf.transpose(mv_temp, [2, 0, 1]), [self.reader_feature_size, -1])
                 # [feature_size, batch_size x memory_size]

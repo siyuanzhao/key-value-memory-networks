@@ -9,28 +9,41 @@ from memn2n_kv import MemN2N_KV
 from itertools import chain
 from six.moves import range, reduce
 from memn2n_kv import zero_nil_slot, add_gradient_noise
+import time
 
 import tensorflow as tf
 import numpy as np
 import pandas as pd
 
+timestamp = str(int(time.time()))
+
 tf.flags.DEFINE_float("learning_rate", 0.001, "Learning rate for Adam Optimizer.")
-tf.flags.DEFINE_float("epsilon", 1, "Epsilon value for Adam Optimizer.")
-tf.flags.DEFINE_float("l2_lambda", 0.2, "Lambda for l2 loss.")
+tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
+tf.flags.DEFINE_float("l2_lambda", 0.1, "Lambda for l2 loss.")
 tf.flags.DEFINE_float("keep_prob", 1.0, "Keep probability for dropout")
-tf.flags.DEFINE_float("max_grad_norm", 40.0, "Clip gradients to this norm.")
+tf.flags.DEFINE_float("max_grad_norm", 20.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_integer("evaluation_interval", 20, "Evaluate and print results every x epochs")
 tf.flags.DEFINE_integer("batch_size", 50, "Batch size for training.")
 tf.flags.DEFINE_integer("hops", 3, "Number of hops in the Memory Network.")
-tf.flags.DEFINE_integer("epochs", 300, "Number of epochs to train for.")
-tf.flags.DEFINE_integer("embedding_size", 50, "Embedding size for embedding matrices.")
+tf.flags.DEFINE_integer("epochs", 200, "Number of epochs to train for.")
+tf.flags.DEFINE_integer("embedding_size", 40, "Embedding size for embedding matrices.")
 tf.flags.DEFINE_integer("memory_size", 50, "Maximum size of memory.")
 tf.flags.DEFINE_integer("random_state", None, "Random state.")
 tf.flags.DEFINE_string("data_dir", "data/tasks_1-20_v1-2/en/", "Directory containing bAbI tasks")
-tf.flags.DEFINE_string("output_file", "scores.csv", "Name of output file for final bAbI accuracy scores.")
+tf.flags.DEFINE_string("param_output_file", "logs/params_{}.csv".format(timestamp), "Name of output file for model hyperparameters")
+tf.flags.DEFINE_string("output_file", "logs/scores_{}.csv".format(timestamp), "Name of output file for final bAbI accuracy scores.")
 tf.flags.DEFINE_integer("feature_size", 50, "Feature size")
 tf.flags.DEFINE_string("reader", "bow", "Reader for the model")
 FLAGS = tf.flags.FLAGS
+
+FLAGS._parse_flags()
+print("\nParameters:")
+with open(FLAGS.param_output_file, 'w') as f:
+    for attr, value in sorted(FLAGS.__flags.items()):
+        line = "{}={}".format(attr.upper(), value)
+        f.write(line + '\n')
+        print(line)
+    print("")
 
 print("Started Joint Model")
 
