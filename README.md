@@ -56,76 +56,45 @@ python joint.py -h
 #### Bag of Words
 ##### Joint Model
 The model is jointly trained on 20 tasks (1k training examples / weakly supervised) with following hyperparameters.
-- epochs: 200
-- feature_size: 50
-- embedding_size: 40
-- hops: 3
-- learning_rate (with decay): 0.005
-- l2 lambda: 0.2
+- BATCH_SIZE=50
+- EMBEDDING_SIZE=40
+- EPOCHS=200
+- EPSILON=0.1
+- FEATURE_SIZE=50
+- HOPS=3
+- L2_LAMBDA=0.1
+- LEARNING_RATE=0.001
+- MAX_GRAD_NORM=20.0
+- MEMORY_SIZE=50
+- READER=bow
+
 ```
-python joint.py --epochs 200 --feature_size 50 --learning_rate 0.005
+python joint.py
 ```
 | Task | Testing Accuracy | Training Accuracy | Validation Accuracy |
 |------|------------------|-------------------|---------------------|
 | 1    | 1.00             | 1.00              | 1.00                |
-| 2    | 0.61             | 0.99              | 0.78                |
-| 3    | 0.36             | 0.95              | 0.56                |
-| 4    | 1.00             | 1.00              | 1.00                |
-| 5    | 0.49             | 0.53              | 0.48                |
-| 6    | 0.97             | 0.99              | 0.98                |
-| 7    | 0.49             | 0.49              | 0.48                |
-| 8    | 0.85             | 0.92              | 0.90                |
-| 9    | 0.96             | 1.00              | 0.96                |
-| 10   | 0.90             | 0.97              | 0.87                |
-| 11   | 0.99             | 1.00              | 0.99                |
-| 12   | 1.00             | 1.00              | 1.00                |
-| 13   | 1.00             | 1.00              | 0.99                |
-| 14   | 0.97             | 1.00              | 0.98                |
-| 15   | 0.21             | 0.29              | 0.26                |
-| 16   | 0.24             | 0.28              | 0.30                |
-| 17   | 0.56             | 0.94              | 0.77                |
-| 18   | 0.92             | 0.98              | 0.95                |
-| 19   | 0.08             | 0.09              | 0.07                |
-| 20   | 1.00             | 1.00              | 1.00                |
+| 2    | 0.80             | 0.87              | 0.85                |
+| 3    | 0.66             | 0.77              | 0.69                |
+| 4    | 0.73             | 0.79              | 0.74                |
+| 5    | 0.84             | 0.91              | 0.80                |
+| 6    | 0.98             | 0.99              | 0.98                |
+| 7    | 0.83             | 0.85              | 0.80                |
+| 8    | 0.89             | 0.92              | 0.86                |
+| 9    | 0.98             | 0.99              | 0.96                |
+| 10   | 0.85             | 0.96              | 0.89                |
+| 11   | 0.97             | 0.98              | 0.99                |
+| 12   | 0.99             | 0.99              | 1.00                |
+| 13   | 0.99             | 0.99              | 1.00                |
+| 14   | 0.80             | 0.90              | 0.84                |
+| 15   | 0.56             | 0.57              | 0.45                |
+| 16   | 0.46             | 0.48              | 0.37                |
+| 17   | 0.57             | 0.72              | 0.70                |
+| 18   | 0.93             | 0.95              | 0.92                |
+| 19   | 0.10             | 0.11              | 0.06                |
+| 20   | 0.98             | 0.99              | 0.99                |
 
 - results on 10k training examples are [here](kv_joint_10k_results.csv)
-
-##### Single Model
-The model is trained on a single task (1k training examples / weakly supervised) at a time with following hyperparameters.
-- epochs: 200
-- feature_size: 40
-- embedding_size: 30
-- hops: 3
-- learning_rate (with decay): 0.005
-- l2 lambda: 0.9
-
-| Task | Testing Accuracy | Training Accuracy | Validation Accuracy |
-|------|------------------|-------------------|---------------------|
-| 1    | 1.00             | 1.00              | 1.00                |
-| 2    | 0.35             | 0.97              | 0.66                |
-| 3    | 0.27             | 0.94              | 0.45                |
-| 4    | 1.00             | 1.00              | 1.00                |
-| 5    | 0.79             | 0.99              | 0.83                |
-| 6    | 0.85             | 0.97              | 0.93                |
-| 7    | 0.78             | 1.00              | 0.77                |
-| 8    | 0.89             | 0.95              | 0.85                |
-| 9    | 0.81             | 1.00              | 0.83                |
-| 10   | 0.81             | 1.00              | 0.70                |
-| 11   | 0.86             | 1.00              | 0.78                |
-| 12   | 1.00             | 1.00              | 0.97                |
-| 13   | 0.90             | 0.99              | 0.92                |
-| 14   | 0.91             | 1.00              | 0.88                |
-| 15   | 1.00             | 1.00              | 1.00                |
-| 16   | 0.43             | 0.93              | 0.41                |
-| 17   | 0.53             | 0.87              | 0.65                |
-| 18   | 0.90             | 0.99              | 0.92                |
-| 19   | 0.12             | 0.60              | 0.12                |
-| 20   | 1.00             | 1.00              | 1.00                |
-
-On single model, overfitting is a problem.
-
-I'm still trying to tune hyperparameters or model to improve results.
-
 
 #### RNN(GRU)
 
