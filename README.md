@@ -15,6 +15,7 @@ Sumit Chopra, from Facebook AI, gave a lecture about Reasoning, Attention and Me
 ```
 git clone https://github.com/siyuanzhao/key-value-memory-networks.git
 
+mkdir ./key-value-memory-networks/key_value_memory/logs
 mkdir ./key-value-memory-networks/key_value_memory/data/
 cd ./key-value-memory-networks/key_value_memory/data
 wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz
