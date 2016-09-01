@@ -5,13 +5,13 @@ from __future__ import print_function
 
 from data_utils import load_task, vectorize_data
 from sklearn import cross_validation, metrics
-from memn2n_gkv import MemN2N_KV
+from memn2n_kv import MemN2N_KV
 from itertools import chain
 from six.moves import range
 
 import tensorflow as tf
 import numpy as np
-from memn2n_gkv import zero_nil_slot, add_gradient_noise
+from memn2n_kv import zero_nil_slot, add_gradient_noise
 
 tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
 tf.flags.DEFINE_float("l2_lambda", 0.1, "Lambda for l2 loss.")
