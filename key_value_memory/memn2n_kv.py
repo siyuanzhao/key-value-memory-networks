@@ -177,7 +177,7 @@ class MemN2N_KV(object):
             #                         initializer=tf.contrib.layers.xavier_initializer())
         elif reader == 'simple_gru':
             #self.B = tf.get_variable('B', shape=[self._feature_size, self._embedding_size],
-            self.B = tf.get_variable('B', shape=[self._feature_size, self._vocab_size],
+            self.B = tf.get_variable('B', shape=[self._feature_size, self._embedding_size],
                                      initializer=tf.contrib.layers.xavier_initializer())
         #logits_bias = tf.get_variable('logits_bias', [self._vocab_size])
         y_tmp = tf.matmul(self.B, self.W_memory, transpose_b=True)
