@@ -4,7 +4,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from data_utils import load_task, vectorize_data
-from sklearn import cross_validation, metrics
+from sklearn import metrics
+from sklearn.model_selection import train_test_split
 from memn2n_kv import MemN2N_KV
 from itertools import chain
 from six.moves import range, reduce
@@ -36,7 +37,6 @@ tf.flags.DEFINE_integer("feature_size", 50, "Feature size")
 tf.flags.DEFINE_string("reader", "bow", "Reader for the model")
 FLAGS = tf.flags.FLAGS
 
-FLAGS._parse_flags()
 print("\nParameters:")
 with open(FLAGS.param_output_file, 'w') as f:
     for attr, value in sorted(FLAGS.__flags.items()):
@@ -80,7 +80,7 @@ trainA = []
 valA = []
 for task in train:
     S, Q, A = vectorize_data(task, word_idx, sentence_size, memory_size)
-    ts, vs, tq, vq, ta, va = cross_validation.train_test_split(S, Q, A, test_size=0.1, random_state=FLAGS.random_state)
+    ts, vs, tq, vq, ta, va = train_test_split(S, Q, A, test_size=0.1, random_state=FLAGS.random_state)
     trainS.append(ts)
     trainQ.append(tq)
     trainA.append(ta)
@@ -130,7 +130,9 @@ with tf.Session() as sess:
 
     model = MemN2N_KV(batch_size=batch_size, vocab_size=vocab_size,
                       query_size=sentence_size, story_size=sentence_size, memory_key_size=memory_size,
-                      feature_size=FLAGS.feature_size, memory_value_size=memory_size, embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader, l2_lambda=FLAGS.l2_lambda)
+                      feature_size=FLAGS.feature_size, memory_value_size=memory_size,
+                      embedding_size=FLAGS.embedding_size, hops=FLAGS.hops, reader=FLAGS.reader,
+                      l2_lambda=FLAGS.l2_lambda)
     grads_and_vars = optimizer.compute_gradients(model.loss_op)
 
     grads_and_vars = [(tf.clip_by_norm(g, FLAGS.max_grad_norm), v)
@@ -144,7 +146,7 @@ with tf.Session() as sess:
             nil_grads_and_vars.append((g, v))
 
     train_op = optimizer.apply_gradients(nil_grads_and_vars, name="train_op", global_step=global_step)
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
     def train_step(s, q, a):
         feed_dict = {

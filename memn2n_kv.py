@@ -33,7 +33,7 @@ def add_gradient_noise(t, stddev=1e-3, name=None):
 
     0.001 was said to be a good fixed value for memory networks [2].
     """
-    with tf.op_scope([t, stddev], name, "add_gradient_noise") as name:
+    with tf.name_scope(name, "add_gradient_noise", [t, stddev]) as name:
         t = tf.convert_to_tensor(t, name="t")
         gn = tf.random_normal(tf.shape(t), stddev=stddev)
         return tf.add(t, gn, name=name)
@@ -44,11 +44,11 @@ def zero_nil_slot(t, name=None):
     The nil_slot is a dummy slot and should not be trained and influence
     the training algorithm.
     """
-    with tf.op_scope([t], name, "zero_nil_slot") as name:
+    with tf.name_scope(name, "zero_nil_slot", [t]) as name:
         t = tf.convert_to_tensor(t, name="t")
         s = tf.shape(t)[1]
         z = tf.zeros(tf.pack([1, s]))
-        return tf.concat(0, [z, tf.slice(t, [1, 0], [-1, -1])], name=name)
+        return tf.concat([z, tf.slice(t, [1, 0], [-1, -1])], 0, name=name)
 
 class MemN2N_KV(object):
     """Key Value Memory Network."""
@@ -120,10 +120,11 @@ class MemN2N_KV(object):
         # Embedding layer
         with tf.device('/cpu:0'), tf.name_scope("embedding"):
             nil_word_slot = tf.zeros([1, embedding_size])
-            self.W = tf.concat(0, [nil_word_slot, tf.get_variable('W', shape=[vocab_size-1, embedding_size],
-                                                                  initializer=tf.contrib.layers.xavier_initializer())])
-            self.W_memory = tf.concat(0, [nil_word_slot, tf.get_variable('W_memory', shape=[vocab_size-1, embedding_size],
-                                                                         initializer=tf.contrib.layers.xavier_initializer())])
+            self.W = tf.concat([nil_word_slot,
+                                tf.get_variable('W',shape=[vocab_size-1, embedding_size],
+                                                initializer=tf.contrib.layers.xavier_initializer())], 0)
+            self.W_memory = tf.concat(
+                [nil_word_slot, tf.get_variable('W_memory',shape=[vocab_size-1, embedding_size], initializer=tf.contrib.layers.xavier_initializer())], 0)
             # self.W_memory = self.W
             self._nil_vars = set([self.W.name, self.W_memory.name])
             # shape: [batch_size, query_size, embedding_size]
@@ -172,9 +173,9 @@ class MemN2N_KV(object):
         o = self._key_addressing(doc_r, value_r, q_r, r_list)
         o = tf.transpose(o)
         if reader == 'bow':
-            self.B = self.A
-            #self.B = tf.get_variable('B', shape=[self._feature_size, self.reader_feature_size],
-            #                         initializer=tf.contrib.layers.xavier_initializer())
+            #self.B = self.A
+            self.B = tf.get_variable('B', shape=[self._feature_size, self.reader_feature_size],
+                                     initializer=tf.contrib.layers.xavier_initializer())
         elif reader == 'simple_gru':
             #self.B = tf.get_variable('B', shape=[self._feature_size, self._embedding_size],
             self.B = tf.get_variable('B', shape=[self._feature_size, self._embedding_size],
@@ -186,7 +187,7 @@ class MemN2N_KV(object):
             #logits = tf.nn.dropout(tf.matmul(o, self.B) + logits_bias, self.keep_prob)
             probs = tf.nn.softmax(tf.cast(logits, tf.float32))
             
-            cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, tf.cast(self._labels, tf.float32), name='cross_entropy')
+            cross_entropy = tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=tf.cast(self._labels, tf.float32), name='cross_entropy')
             cross_entropy_sum = tf.reduce_sum(cross_entropy, name="cross_entropy_sum")
 
             # loss op

@@ -4,7 +4,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from data_utils import load_task, vectorize_data
-from sklearn import cross_validation, metrics
+from sklearn import metrics
+from sklearn.model_selection import train_test_split
 from memn2n_kv import MemN2N_KV
 from itertools import chain
 from six.moves import range
@@ -14,7 +15,7 @@ import numpy as np
 from memn2n_kv import zero_nil_slot, add_gradient_noise
 
 tf.flags.DEFINE_float("epsilon", 0.1, "Epsilon value for Adam Optimizer.")
-tf.flags.DEFINE_float("l2_lambda", 0.1, "Lambda for l2 loss.")
+tf.flags.DEFINE_float("l2_lambda", 0.2, "Lambda for l2 loss.")
 tf.flags.DEFINE_float("learning_rate", 0.001, "Learning rate")
 tf.flags.DEFINE_float("max_grad_norm", 20.0, "Clip gradients to this norm.")
 tf.flags.DEFINE_float("keep_prob", 1.0, "Keep probability for dropout")
@@ -26,7 +27,7 @@ tf.flags.DEFINE_integer("epochs", 100, "Number of epochs to train for.")
 tf.flags.DEFINE_integer("embedding_size", 30, "Embedding size for embedding matrices.")
 tf.flags.DEFINE_integer("memory_size", 20, "Maximum size of memory.")
 tf.flags.DEFINE_integer("task_id", 1, "bAbI task id, 1 <= id <= 20")
-tf.flags.DEFINE_string("data_dir", "data/tasks_1-20_v1-2/en-10k/", "Directory containing bAbI tasks")
+tf.flags.DEFINE_string("data_dir", "data/tasks_1-20_v1-2/en/", "Directory containing bAbI tasks")
 tf.flags.DEFINE_string("reader", "bow", "Reader for the model (bow, simple_gru)")
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
@@ -57,7 +58,7 @@ print("Average story length", mean_story_size)
 
 # train/validation/test sets
 S, Q, A = vectorize_data(train, word_idx, sentence_size, memory_size)
-trainS, valS, trainQ, valQ, trainA, valA = cross_validation.train_test_split(S, Q, A, test_size=.1)
+trainS, valS, trainQ, valQ, trainA, valA = train_test_split(S, Q, A, test_size=.1)
 testS, testQ, testA = vectorize_data(test, word_idx, sentence_size, memory_size)
 
 print("Training set shape", trainS.shape)
@@ -110,7 +111,7 @@ with tf.Graph().as_default():
                 nil_grads_and_vars.append((g, v))
 
         train_op = optimizer.apply_gradients(nil_grads_and_vars, name="train_op", global_step=global_step)
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
 
         def train_step(s, q, a):
             feed_dict = {
@@ -136,22 +137,24 @@ with tf.Graph().as_default():
         for t in range(1, FLAGS.epochs+1):
             np.random.shuffle(batches)
             train_preds = []
-            for start in range(0, n_train, batch_size):
-                end = start + batch_size
+            #for start in range(0, n_train, batch_size):
+            for start, end in batches:
+                #end = start + batch_size
                 s = trainS[start:end]
                 q = trainQ[start:end]
                 a = trainA[start:end]
                 predict_op = train_step(s, q, a)
                 train_preds += list(predict_op)
-
-                # total_cost += cost_t
-            train_acc = metrics.accuracy_score(np.array(train_preds), train_labels)
-            print('-----------------------')
-            print('Epoch', t)
-            print('Training Accuracy: {0:.2f}'.format(train_acc))
-            print('-----------------------')
                 
             if t % FLAGS.evaluation_interval == 0:
+                # test on train dataset
+                train_preds = test_step(trainS, trainQ)
+                train_acc = metrics.accuracy_score(train_labels, train_preds)
+                print('-----------------------')
+                print('Epoch', t)
+                print('Training Accuracy: {0:.2f}'.format(train_acc))
+                print('-----------------------')
+
                 val_preds = test_step(valS, valQ)
                 val_acc = metrics.accuracy_score(np.array(val_preds), val_labels)
                 print (val_preds)
