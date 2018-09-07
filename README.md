@@ -15,9 +15,9 @@ Sumit Chopra, from Facebook AI, gave a lecture about Reasoning, Attention and Me
 ```
 git clone https://github.com/siyuanzhao/key-value-memory-networks.git
 
-mkdir ./key-value-memory-networks/key_value_memory/logs
-mkdir ./key-value-memory-networks/key_value_memory/data/
-cd ./key-value-memory-networks/key_value_memory/data
+mkdir ./key-value-memory-networks/logs
+mkdir ./key-value-memory-networks/data/
+cd ./key-value-memory-networks/data
 wget http://www.thespermwhale.com/jaseweston/babi/tasks_1-20_v1-2.tar.gz
 tar xzvf ./tasks_1-20_v1-2.tar.gz
 
@@ -101,6 +101,6 @@ python joint.py
 
 ### Requirements
 
-* tensorflow 0.9
-* scikit-learn 0.17.1
+* tensorflow 1.10
+* scikit-learn 0.19
 * six 1.10.0
